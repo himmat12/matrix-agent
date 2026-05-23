@@ -5,8 +5,27 @@ import httpx
 from typing import Any, Dict, List, Optional
 from openai import OpenAI
 import json
+from schema import AGENT_INSTRUCTIONS, TEXT_FORMAT, AGENT_SCHEMA
+from pydantic import BaseModel
 
 load_dotenv()
+
+
+class Steps(BaseModel):
+    thought: str
+    action: str
+    tool_name: Optional[str] = None
+    arguments: Optional[Dict[str, Any]] = None
+    message: str
+
+
+class AgentResponse(BaseModel):
+    thought: str
+    action: str
+    tool_name: Optional[str] = None
+    arguments: Optional[Dict[str, Any]] = None
+    message: str
+
 
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
@@ -21,7 +40,8 @@ client = OpenAI(
 
 TOOLS = []
 
-def generate_text(prompt: str, max_tokens: int = 500) -> Any:
+
+def generate_text(prompt: str, max_tokens: int = 500) -> Dict[str, Any]:
     """
     Generate text based on a given prompt using an external API.
 
@@ -30,22 +50,24 @@ def generate_text(prompt: str, max_tokens: int = 500) -> Any:
         max_tokens (int): The maximum number of tokens to generate.
 
     Returns:
-        str: The generated text.
+        Dict[str, Any]: The generated text as a JSON object.
     """
     try:
 
         response = client.responses.create(
             input=prompt,
             model="gpt-5.4",
-            instructions="You are a helpful assistant that generates text based on the given prompt.",
+            instructions=AGENT_INSTRUCTIONS,
+            text=TEXT_FORMAT,
             tools=TOOLS,
         )
 
-        data = response.model_dump_json(indent=2)
-        return json.loads(data)["output"][0]["content"][0]["text"]
+        json_string = response.output[0].content[0].model_dump_json(indent=2)
+        return json.loads(json_string)
+
     except Exception as e:
         print(f"An error occurred: {e}")
-        return ""
+        return {}
 
 
 conversation_history: List[Dict[str, str]] = []
@@ -71,8 +93,8 @@ while True:
             print(entry)
         continue
 
-    llm_response = generate_text(user_input)
-    print("[assistant]:", llm_response)
+    llm_response = json.loads(generate_text(user_input)["text"])
+    print("[assistant]:", llm_response["final_answer"])
 
     conversation_history.append({"role": "user", "content": user_input})
     conversation_history.append({"role": "assistant", "content": llm_response})
