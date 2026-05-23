@@ -1,21 +1,86 @@
+TOOL_NAMES = [
+    "getAgentLocation",
+    "moveAgent",
+    "moveUntilEdgeOrWallWithoutFallingFromEdge",
+    None,
+]
+
+TOOLS_SCHEMA = [
+    {
+        "type": "function",
+        "name": "getAgentLocation",
+        "description": "Get the current location of the agent in the 10x10 matrix world.",
+        "strict": True,
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "type": "function",
+        "name": "moveAgent",
+        "description": "Move the agent by one cell in the given direction if the move is valid. Returns true if the move succeeds, otherwise false.",
+        "strict": True,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "direction": {
+                    "type": "string",
+                    "enum": ["up", "down", "left", "right"],
+                    "description": "The direction to move the agent by one step.",
+                }
+            },
+            "required": ["direction"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "type": "function",
+        "name": "moveUntilEdgeOrWallWithoutFallingFromEdge",
+        "description": "Move the agent continuously in the given direction until it reaches a wall or the edge of the world without falling off the map.",
+        "strict": True,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "direction": {
+                    "type": "string",
+                    "enum": ["up", "down", "left", "right"],
+                    "description": "The direction to keep moving the agent.",
+                }
+            },
+            "required": ["direction"],
+            "additionalProperties": False,
+        },
+    },
+]
+
 AGENT_INSTRUCTIONS = """
-You are a helpful assistant James that generates text based on the given prompt. You can also call tools if needed. 
-Always respond with a JSON object that adheres to the following schema:
+You are a helpful assistant who exists in a 2D grid world.
+You can move around the grid by choosing tools when needed.
+
+Always respond with a JSON object matching this structure:
 {
-    "thought": "Your thought process or reasoning behind the response.",
-    "action": "The action you want to take, either 'tool_call' or 'final'.",
-    "tool_name": "The name of the tool you want to call (if action is 'tool_call'), otherwise null.",
-    "arguments": { ... } (if action is 'tool_call'), otherwise null.",
-    "final_answer": "The final answer you want to convey to the user."
+  "plan": "A brief explanation of the next step.",
+  "action": "Either 'tool_call' or 'final'.",
+  "tool_name": "One of: getAgentLocation, moveAgent, moveUntilEdgeOrWallWithoutFallingFromEdge, or null.",
+  "arguments": "An object of tool arguments if action is 'tool_call', otherwise null.",
+  "message": "A user-facing response for this step."
 }
+
+Rules:
+- If action is "final", tool_name must be null and arguments must be null.
+- If action is "tool_call", tool_name must be a valid tool name and arguments must match that tool.
+- Keep plan short and useful.
 """
 
 AGENT_SCHEMA = {
     "type": "object",
     "properties": {
-        "thought": {
+        "plan": {
             "type": "string",
-            "description": "Your step-by-step thought process or reasoning explanation behind the response.",
+            "description": "Brief explanation of the next step.",
         },
         "action": {
             "type": "string",
@@ -24,25 +89,20 @@ AGENT_SCHEMA = {
         },
         "tool_name": {
             "type": ["string", "null"],
-            "description": "The name of the tool you want to call (if action is 'tool_call'), otherwise null.",
+            "description": "Tool to call when action is tool_call, otherwise null.",
+            "enum": TOOL_NAMES,
         },
         "arguments": {
-            "description": "The arguments for the tool call (if action is 'tool_call'), otherwise null.",
-            "anyOf": [
-                {
-                    "type": "object",
-                    "description": "Tool arguments: shape depends on tool_name",
-                    "additionalProperties": False,
-                },
-                {"type": "null"},
-            ],
+            "type": ["object", "null"],
+            "description": "Arguments for the tool call, otherwise null.",
+            "additionalProperties": False,
         },
-        "final_answer": {
+        "message": {
             "type": "string",
-            "description": "The final answer you want to convey to the user for this step.",
+            "description": "User-facing response for this step. If action is final, this is the final answer.",
         },
     },
-    "required": ["thought", "action", "tool_name", "arguments", "final_answer"],
+    "required": ["plan", "action", "tool_name", "arguments", "message"],
     "additionalProperties": False,
 }
 
@@ -52,33 +112,5 @@ TEXT_FORMAT = {
         "name": "react_agent_step",
         "strict": True,
         "schema": AGENT_SCHEMA,
-    }
-}
-
-text = {
-    "format": {
-        "type": "json_schema",
-        "name": "math_response",
-        "schema": {
-            "type": "object",
-            "properties": {
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "explanation": {"type": "string"},
-                            "output": {"type": "string"},
-                        },
-                        "required": ["explanation", "output"],
-                        "additionalProperties": False,
-                    },
-                },
-                "final_answer": {"type": "string"},
-            },
-            "required": ["steps", "final_answer"],
-            "additionalProperties": False,
-        },
-        "strict": True,
     }
 }

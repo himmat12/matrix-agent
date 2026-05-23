@@ -1,0 +1,10 @@
+.env
+.venv
+.vscode
+__pycache__
+*.pyc
+*.pyo
+.git
+.gitignore
+output
+node_modules
