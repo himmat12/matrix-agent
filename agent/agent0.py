@@ -43,6 +43,8 @@ def generate_text(prompt: str, max_tokens: int = 500) -> Dict[str, Any]:
         Dict[str, Any]: The generated text as a JSON object.
     """
     try:
+        print (prompt)
+        
         response = client.responses.create(
             input=prompt,
             model="gpt-5.4",
@@ -51,8 +53,12 @@ def generate_text(prompt: str, max_tokens: int = 500) -> Dict[str, Any]:
             tools=TOOLS_SCHEMA,
         )
 
+        # print(response)
         json_string = response.output[0].content[0]
-        return json.loads(json_string)
+        print(json_string)
+        final_json = json.loads(json_string)
+        print(final_json)
+        return final_json
     except Exception as e:
         print(f"An error occurred: {e}")
         return {}
@@ -82,7 +88,7 @@ def run_agent(user_input: str, max_setps: int = 5):
         conversation_Context = get_parsed_conversation_history()
         llm_response = generate_text(conversation_Context)
 
-        # print(f"\n\nLLM RESPONSE: {llm_response}\n\n")
+        print(f"\n\nLLM RESPONSE: {llm_response}\n\n")
 
         if not isinstance(llm_response, dict):
             return "Model returned invalid response."
@@ -95,6 +101,12 @@ def run_agent(user_input: str, max_setps: int = 5):
 
         conversation_history.append(create_message("plan", plan))
 
+        print(plan)
+        print(action)
+        print(tool_name)
+        print(arguments)
+        print(message)
+        
         if action == "final":
             conversation_history.append(create_message("assistant", message))
             return message

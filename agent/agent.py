@@ -112,12 +112,11 @@ def call_model_for_final_answer(
 def run_agent(user_input: str, max_steps: int = 8) -> str:
     conversation_history.append(create_message("user", user_input))
 
-    input_items: List[Dict[str, Any]] = [{"role": "user", "content": user_input}]
     previous_response_id = None
 
     for _ in range(max_steps):
         response = call_model_with_tools(
-            input_items, previous_response_id=previous_response_id
+            conversation_history, previous_response_id=previous_response_id
         )
         previous_response_id = response.id
 
@@ -176,9 +175,9 @@ def run_agent(user_input: str, max_steps: int = 8) -> str:
 
             final_json = call_model_for_final_answer(
                 (
-                    [{"role": "assistant", "content": assistant_text}]
+                    conversation_history.append(create_message("assistant", assistant_text))
                     if assistant_text
-                    else [{"role": "user", "content": user_input}]
+                    else conversation_history.append(create_message("user", user_input))
                 ),
                 previous_response_id=previous_response_id,
             )

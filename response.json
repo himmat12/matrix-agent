@@ -1,7 +1,0 @@
-{
-    "thought": "The user greeted me casually. I should respond with a friendly greeting and offer help.",
-    "action": "final",
-    "tool_name": null,
-    "arguments": null,
-    "final_answer": "Hey! How can I help?"
-}
