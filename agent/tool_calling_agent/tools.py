@@ -1,3 +1,4 @@
+from functools import partial
 import inspect
 from docstring_parser import parse
 from typing import Dict, Any, List
@@ -122,9 +123,41 @@ TOOLS = {
     "get_x_percentage_of_y": get_x_percentage_of_y,
 }
 
+TOOLS_REGISTERY = {
+    "add": partial(add),
+    "subtract": partial(subtract),
+    "multiply": partial(multiply),
+    "divide": partial(divide),
+    "mod": partial(mod),
+    "pi": partial(pi),
+    "get_x_percentage_of_y": partial(get_x_percentage_of_y),
+}
+
 """
 Utility functions: Tool schemas generation functions 
 """
+
+
+def get_data_type(type_name: str) -> str:
+    normalised_type_name = type_name.lower()
+    data_type: str = ""
+
+    if normalised_type_name == "number" or normalised_type_name == "float":
+        data_type = "number"
+
+    if normalised_type_name == "int":
+        data_type = "integer"
+
+    if normalised_type_name == "str":
+        data_type = "string"
+
+    if normalised_type_name == "bool":
+        data_type = "boolean"
+
+    if normalised_type_name == "list":
+        data_type = "array"
+
+    return data_type
 
 
 def create_tool_schmea(
@@ -143,6 +176,12 @@ def create_tool_schmea(
     tool_schema = {}
     required = []
     properties = {}
+    parameters = {
+        "type": "object",
+        "properties": properties,
+        "required": required,
+        "additionalProperties": additional_properties,
+    }
 
     sig = inspect.signature(func)
     doc_string = inspect.getdoc(func)
@@ -151,7 +190,7 @@ def create_tool_schmea(
     if parsed:
         for parma in parsed.params:
             properties[parma.arg_name] = {
-                "type": parma.type_name,
+                "type": get_data_type(parma.type_name),
                 "description": parma.description,
             }
 
@@ -164,11 +203,29 @@ def create_tool_schmea(
         tool_schema["name"] = func.__name__
         tool_schema["description"] = parsed.description
         tool_schema["strict"] = strict
-        tool_schema["required"] = required
-        tool_schema["properties"] = properties
-        tool_schema["additionalProperties"] = additional_properties
+        tool_schema["parameters"] = parameters
 
     return tool_schema
+
+
+# {
+#         "type": "function",
+#         "name": "moveAgent",
+#         "description": "Move the agent by one cell in the given direction if the move is valid. Returns true if the move succeeds, otherwise false.",
+#         "strict": True,
+#         "parameters": {
+#             "type": "object",
+#             "properties": {
+#                 "direction": {
+#                     "type": "string",
+#                     "enum": ["up", "down", "left", "right"],
+#                     "description": "The direction to move the agent by one step.",
+#                 }
+#             },
+#             "required": ["direction"],
+#             "additionalProperties": False,
+#         },
+#     }
 
 
 def generate_tools_schema(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -176,7 +233,7 @@ def generate_tools_schema(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     Generates a list of tools schema compitable to OpenAI models.
 
     Returns:
-        tool_schemas (Dict[str, Any]): A List of dictionary which is compitable with OpenAI models tool schema.
+        tool_schemas (List[Dict[str, Any]]): A List of dictionary which is compitable with OpenAI models tool schema.
     """
     tool_schemas = []
 
@@ -188,3 +245,13 @@ def generate_tools_schema(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 TOOLS_SCHEMA = generate_tools_schema(TOOLS)
+
+
+def main():
+    for schema in TOOLS_SCHEMA:
+        print(schema)
+        print()
+
+
+if __name__ == "__main__":
+    main()

@@ -16,6 +16,7 @@ from world import (
     initialise_world,
     matrix,
 )
+from utilities import create_message, get_parsed_conversation_history
 
 load_dotenv()
 
@@ -65,20 +66,6 @@ def generate_text(prompt: str, max_tokens: int = 500) -> Dict[str, Any]:
 
 
 conversation_history: List[Dict[str, str]] = []
-
-
-def create_message(role: str, content: str) -> Dict[str, str]:
-    return {"role": role, "content": content}
-
-
-def get_parsed_conversation_history():
-    lines = []
-
-    for message in conversation_history:
-        lines.append(f"{message['role'].upper()}: {message['content']}\n")
-
-    return "\n".join(lines)
-
 
 def run_agent(user_input: str, max_setps: int = 5):
 

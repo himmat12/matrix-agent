@@ -58,7 +58,9 @@ format = Format(
 )
 
 INSTRUCTIONS = """
-You are a helpful asistant who will use available tools to help user queries.
+You are a tool calling agent who will use available tools to help user queries.
+When user requests some tasks you first evaluate the goal and use tools when necessary.
+Tools can be used when possible if the specific tasks can be done with it.
 """.strip()
 
 TEXT_FORMAT = {"format": format.model_dump()}
