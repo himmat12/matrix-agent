@@ -11,6 +11,7 @@ class PropertiesObject(BaseModel):
 class Properties(BaseModel):
     plan: PropertiesObject
     message: PropertiesObject
+    observation: PropertiesObject
 
 
 class Schema(BaseModel):
@@ -32,21 +33,39 @@ class LLMResponse(BaseModel):
     output: Dict[str, Any]
 
 
-planProperty = PropertiesObject(
-    name="plan",
+observationProperty = PropertiesObject(
+    name="observation",
     type="string",
-    description="A brief plan for next action.",
+    description="Brief explanation of how the final answer was produced and did it meet the user request.",
 )
+
 messageProperty = PropertiesObject(
     name="message",
     type="string",
-    description="Response for user.",
+    description="Final user-facing response.",
 )
-properties = Properties(plan=planProperty, message=messageProperty)
+
+planProperty = PropertiesObject(
+    name="plan",
+    type="string",
+    description="Short working memory summary for the next loop: what was done, what remains, and any constraints.",
+)
+
+
+properties = Properties(
+    plan=planProperty,
+    message=messageProperty,
+    observation=observationProperty,
+)
+
 schema = Schema(
     type="object",
     properties=properties,
-    required=[planProperty.name, messageProperty.name],
+    required=[
+        planProperty.name,
+        messageProperty.name,
+        observationProperty.name,
+    ],
     additionalProperties=False,
 )
 

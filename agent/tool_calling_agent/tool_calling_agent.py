@@ -63,21 +63,15 @@ def generate_response(user_input: str) -> LLMResponse:
         item_types = [item.type for item in response.output]
 
         messages = [
-            item.model_dump()
-            for item in response.output
-            if item.type == MESSAGE
+            item.model_dump() for item in response.output if item.type == MESSAGE
         ]
 
         function_calls = [
-            item.model_dump()
-            for item in response.output
-            if item.type == FUNCTION_CALL
+            item.model_dump() for item in response.output if item.type == FUNCTION_CALL
         ]
 
         reasoning = [
-            item.model_dump()
-            for item in response.output
-            if item.type == REASONING
+            item.model_dump() for item in response.output if item.type == REASONING
         ]
 
         llm_response = LLMResponse(
@@ -111,54 +105,133 @@ def generate_response(user_input: str) -> LLMResponse:
         print(f"Error: {str(e)}")
 
 
-conversation_history = []
+agent_state = {
+    "latest_plan": None,
+    "plans": [],
+    "debug_traces": [],
+    "conversation": [],
+}
+
+conversation_history = agent_state.get("conversation")
 
 
-def run_tool_calling_agent(user_input: str, max_steps: int = 8):
+def call_model_with_tools(user_input_list: List[Dict[str, Any]]):
+    return client.responses.create(
+        model="gpt-5.4",
+        input=user_input_list,
+        instructions=INSTRUCTIONS,
+        tools=TOOLS_SCHEMA,
+    )
+
+
+def call_model_final_answer(user_input_list: List[Dict[str, Any]]):
+    response = client.responses.create(
+        model="gpt-5.4",
+        input=user_input_list,
+        instructions=(
+            "Produce the final answer for the user as structured JSON. "
+            "Do not call any tools."
+        ),
+        text=TEXT_FORMAT,
+    )
+
+    message_items = [item for item in response.output if item.type == "message"]
+
+    if not message_items:
+        raise ValueError("No final message returned by model.")
+
+    text = message_items[0].content[0].text
+    return json.loads(text)
+
+
+def run_agent(user_input: str, max_steps: int = 12):
     message = create_message("user", user_input)
     conversation_history.append(message)
 
-    conversation_context = get_parsed_conversation_history(conversation_history)
-
     for each_step in range(max_steps):
-        llm_response = generate_response(conversation_context)
+        llm_response = call_model_with_tools(conversation_history)
 
-        if llm_response:
-            if not llm_response.type == FUNCTION_CALL:
-                return llm_response.output["output_text"]
+        if not llm_response:
+            return None
 
-            for function_call in llm_response.output["function_calls"]:
-                function_name = function_call["name"]
-                arguments = json.loads(function_call["arguments"])
+        function_calls = [
+            item for item in llm_response.output if item.type == "function_call"
+        ]
 
-                if function_name not in TOOLS_REGISTERY:
-                    fnction_output = {"error": f"Unknown function: {function_name}"}
+        message_items = [item for item in llm_response.output if item.type == "message"]
+
+        if len(function_calls) > 0:
+            for each_function_call in function_calls:
+                tool_call_id = each_function_call.call_id
+                tool_name = each_function_call.name
+                arguments = json.loads(each_function_call.arguments)
+
+                conversation_history.append(each_function_call.model_dump())
+
+                if tool_name not in TOOLS_REGISTERY:
+                    tool_output = {"error": f"Unknown tool: {tool_name}"}
                 else:
                     try:
-                        funcation_result = TOOLS_REGISTERY[function_name](**arguments)
-                        fnction_output = {
+                        tool_call_result = TOOLS_REGISTERY[tool_name](**arguments)
+                        tool_output = {
                             "ok": True,
-                            "function_name": function_name,
+                            "tool_name": tool_name,
                             "arguments": arguments,
-                            "result": funcation_result,
+                            "result": tool_call_result,
                         }
                     except Exception as e:
-                        fnction_output = {
+                        tool_output = {
                             "ok": False,
-                            "function_name": function_name,
+                            "tool_name": tool_name,
                             "arguments": arguments,
                             "error": str(e),
                         }
 
-                function_output_text = json.dumps(fnction_output)
+                    conversation_history.append(
+                        {
+                            "type": "function_call_output",
+                            "call_id": tool_call_id,
+                            "output": json.dumps(tool_output),
+                        }
+                    )
+                    continue
 
-                print(
-                    f"function call:\n{function_name} with parameters {arguments}\nfunction result:\n{fnction_output}\n\n"
-                )
+        if message_items:
+            assistant_text_parts = []
+            for each_message_item in message_items:
+                for each_content in each_message_item.content:
+                    if hasattr(each_content, "text") and each_content.text:
+                        assistant_text_parts.append(each_content.text)
+            assistant_text = "\n".join(assistant_text_parts)
 
+            final_json = call_model_final_answer(conversation_history)
+
+            plan = final_json.get("plan", "")
+            observation = final_json.get("observation", "")
+            message = final_json.get("message", assistant_text)
+
+            if plan:
                 conversation_history.append(
-                    create_message("tool_call", function_output_text)
+                    create_message("assistant", f"[PLAN]:\n{plan}")
                 )
+
+            if assistant_text:
+                conversation_history.append(create_message("assistant", assistant_text))
+
+            if observation:
+                conversation_history.append(
+                    create_message("assistant", f"[OBSERVATION]:\n{observation}")
+                )
+            return message
+
+        # with open("response.txt", "a", encoding="utf-8") as f:
+        #     f.write(
+        #         f"LLM RESPONSE - STEP {each_step}:\n{llm_response.model_dump_json(indent=2)}\n\n"
+        #     )
+        #     f.write(f"UPDATED CONVERSATION HISTORY:\n{conversation_history}\n\n")
+
+        # if each_step == (max_steps - 1):
+    return "Max agent steps reached without a final answer."
 
 
 def main():
@@ -174,7 +247,17 @@ def main():
                 print(entry)
             continue
 
-        print(run_tool_calling_agent(user_input))
+        # print(run_tool_calling_agent(user_input))
+
+        try:
+            print(f"\n[user]: {user_input}")
+            assistant_message = run_agent(user_input)
+            print(f"\n[assistant]: {assistant_message}")
+            print()
+            print()
+            print(agent_state["conversation"])
+        except Exception as e:
+            print(f"Error: {str(e)}")
 
 
 if __name__ == "__main__":
