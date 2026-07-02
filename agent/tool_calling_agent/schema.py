@@ -11,7 +11,6 @@ class PropertiesObject(BaseModel):
 class Properties(BaseModel):
     plan: PropertiesObject
     message: PropertiesObject
-    observation: PropertiesObject
 
 
 class Schema(BaseModel):
@@ -32,13 +31,6 @@ class LLMResponse(BaseModel):
     type: str
     output: Dict[str, Any]
 
-
-observationProperty = PropertiesObject(
-    name="observation",
-    type="string",
-    description="Brief explanation of how the final answer was produced and did it meet the user request.",
-)
-
 messageProperty = PropertiesObject(
     name="message",
     type="string",
@@ -55,7 +47,6 @@ planProperty = PropertiesObject(
 properties = Properties(
     plan=planProperty,
     message=messageProperty,
-    observation=observationProperty,
 )
 
 schema = Schema(
@@ -64,7 +55,6 @@ schema = Schema(
     required=[
         planProperty.name,
         messageProperty.name,
-        observationProperty.name,
     ],
     additionalProperties=False,
 )
@@ -78,8 +68,9 @@ format = Format(
 
 INSTRUCTIONS = """
 You are a tool calling agent who will use available tools to help user queries.
-When user requests some tasks you first evaluate the goal and use tools when necessary.
+When user requests some tasks you first evaluate the goal and use only tools available in your toolset when necessary.
 Tools can be used when possible if the specific tasks can be done with it.
+When a tool is used, base the final answer only on the tool output for that subtask.
 """.strip()
 
 TEXT_FORMAT = {"format": format.model_dump()}

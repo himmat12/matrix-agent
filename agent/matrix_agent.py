@@ -5,9 +5,6 @@ from openai import OpenAI
 from tools import TOOLS_SCHEMA, TOOLS_REGISTERY
 from schema import TEXT_FORMAT, INSTRUCTIONS
 
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 CONVERSATION = []
 
 
@@ -82,27 +79,3 @@ def run_agent(user_input: str, max_steps: int = 12):
 
     return "Max agent steps reached without a final answer."
 
-
-def main():
-    while True:
-        user_input = input("Enter your prompt: ").strip()
-
-        if user_input.lower() in {"exit", "e"}:
-            break
-
-        if user_input.lower() in {"history", "h"}:
-            print("\nRaw Conversation Data:\n")
-            for entry in CONVERSATION:
-                print(entry)
-            continue
-
-        try:
-            print(f"\n[user]: {user_input}")
-            assistant_message = run_agent(user_input)
-            print(f"\n[assistant]: {assistant_message}\n")
-        except Exception as e:
-            print(f"Error: {str(e)}")
-
-
-if __name__ == "__main__":
-    main()

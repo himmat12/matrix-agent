@@ -1,15 +1,23 @@
 matrix = [["." for _ in range(10)] for _ in range(10)]
 agent_location = None
 
+
 """
 Functions to set up the world with different configurations of walls and coins.
 """
 
 
 def setBorder(matrix):
-    """
-    Border world will have walls sorrounding it, but will have no walls and no coins planted inside the world.
-    Agent will have to navigate through the world to reach the shop while avoiding fall from the edge.
+    """Places walls along the outer border of the world.
+
+    This function mutates the given 10x10 matrix in place by setting all edge
+    cells to "#". Interior cells are left unchanged.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        None
     """
     for i in range(10):
         for j in range(10):
@@ -18,10 +26,19 @@ def setBorder(matrix):
 
 
 def plantCoinsInGivenLocations(matrix, locations):
-    """
-    Plant coins in the given locations. Locations should be a list of tuples, where each tuple represents the (i, j) coordinates of the cell where the coin should be planted.
-    """
+    """Places coins at the specified coordinates if the cells are empty.
 
+    A coin is only planted when the target cell contains ".". Existing walls,
+    shops, agents, or coins are not overwritten.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+        locations (list[tuple[int, int]]): Cell coordinates where coins should
+            be placed.
+
+    Returns:
+        None
+    """
     for location in locations:
         i, j = location
         if matrix[i][j] == ".":
@@ -29,8 +46,16 @@ def plantCoinsInGivenLocations(matrix, locations):
 
 
 def plantCoinsInRandomLocation(matrix):
-    """
-    Plant coins in random locations within the world.
+    """Attempts to place coins in random cells.
+
+    This function performs 10 random placement attempts. A coin is only planted
+    when the chosen cell is empty, so fewer than 10 coins may be added.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        None
     """
     import random
 
@@ -42,8 +67,16 @@ def plantCoinsInRandomLocation(matrix):
 
 
 def plantWallsInRandomLocation(matrix):
-    """
-    Plant walls in random locations within the world.
+    """Attempts to place walls in random cells.
+
+    This function performs 10 random placement attempts. A wall is only planted
+    when the chosen cell is empty, so fewer than 10 walls may be added.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        None
     """
     import random
 
@@ -55,9 +88,16 @@ def plantWallsInRandomLocation(matrix):
 
 
 def plantMazeWalls(matrix):
-    """
-    Plant walls in a maze-like pattern within the world.
-    Agent will have to navigate through the maze to reach the shop while avoiding walls and fall from the edge.
+    """Places walls in a fixed maze-like pattern.
+
+    This function mutates the matrix in place using a predefined layout rather
+    than a randomly generated maze.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        None
     """
     for i in range(10):
         for j in range(10):
@@ -75,9 +115,16 @@ def plantMazeWalls(matrix):
 
 
 def plantRandomMazeWalls(matrix):
-    """
-    Plant walls in random locations within the world, but in a maze-like pattern.
-    Agent will have to navigate through the maze to reach the shop while avoiding walls and fall from the edge.
+    """Attempts to place random walls for a loose maze-like layout.
+
+    This function performs 20 random placement attempts. A wall is only planted
+    when the selected cell is empty.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        None
     """
     import random
 
@@ -89,9 +136,16 @@ def plantRandomMazeWalls(matrix):
 
 
 def plantRandomSophisticatedMazeWalls(matrix):
-    """
-    Plant walls in random locations within the world, but in a more sophisticated maze-like pattern.
-    Agent will have to navigate through the maze to reach the shop while avoiding walls and fall from the edge.
+    """Attempts to place a denser random wall layout.
+
+    This function performs 40 random placement attempts in total across two
+    loops. A wall is only planted when the selected cell is empty.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        None
     """
     import random
 
@@ -108,9 +162,16 @@ def plantRandomSophisticatedMazeWalls(matrix):
 
 
 def plantAShopInRandomLocation(matrix):
-    """
-    Plant a shop in a random location within the world.
-    Agent will have to navigate through the world to reach the shop while avoiding walls and fall from the edge.
+    """Places a shop in a random empty cell.
+
+    The function keeps sampling random coordinates until it finds an empty cell,
+    then places "S" there.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        None
     """
     import random
 
@@ -123,9 +184,16 @@ def plantAShopInRandomLocation(matrix):
 
 
 def plantAgentInRandomLocation(matrix):
-    """
-    Plant the agent in a random location within the world.
-    Agent will have to navigate through the world to collect coins and reach the shop while avoiding walls and fall from the edge.
+    """Places the agent in a random empty cell.
+
+    The function keeps sampling random coordinates until it finds an empty cell,
+    then places "A" there.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        None
     """
     import random
 
@@ -138,13 +206,21 @@ def plantAgentInRandomLocation(matrix):
 
 
 """
-Functions to get the location of the agent, coins and shop in the world."""
+Functions to get the location of the agent, coins and shop in the world.
+"""
 
 
 def getAgentLocation(matrix):
-    """
-    Get the location of the agent in the world.
-    Returns a tuple (i, j) representing the coordinates of the agent in the world.
+    """Returns the coordinates of the agent.
+
+    The matrix is scanned row by row until a cell containing "A" is found.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        tuple[int, int] | None: The `(row, column)` position of the agent, or
+        None if no agent exists in the grid.
     """
     for i in range(10):
         for j in range(10):
@@ -154,9 +230,14 @@ def getAgentLocation(matrix):
 
 
 def getCoinsLocations(matrix):
-    """
-    Get the locations of the coins in the world.
-    Returns a list of tuples, where each tuple represents the coordinates of a coin in the world.
+    """Returns the coordinates of all coins in the world.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        list[tuple[int, int]]: A list of `(row, column)` positions containing
+        coins.
     """
     coins = []
     for i in range(10):
@@ -167,9 +248,16 @@ def getCoinsLocations(matrix):
 
 
 def getShopLocation(matrix):
-    """
-    Get the location of the shop in the world.
-    Returns a tuple (i, j) representing the coordinates of the shop in the world.
+    """Returns the coordinates of the shop.
+
+    The matrix is scanned row by row until a cell containing "S" is found.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        tuple[int, int] | None: The `(row, column)` position of the shop, or
+        None if no shop exists in the grid.
     """
     for i in range(10):
         for j in range(10):
@@ -179,18 +267,28 @@ def getShopLocation(matrix):
 
 
 """
-Agent can move in four directions: up, down, left, right. 
-Agent cannot move through walls or fall from the edge of the world. Agent can only move to an empty cell or a cell with a coin or a shop.
+Agent can move in four directions: up, down, left, right.
+Agent cannot move through walls or fall from the edge of the world. Agent can
+only move to an empty cell or a cell with a coin or a shop.
 """
 
 
 def moveAgent(matrix, direction):
-    """
-    Move the agent in the given direction if possible.
-    Direction can be 'up', 'down', 'left' or 'right'.
+    """Moves the agent one step in the given direction when possible.
+
+    The function updates the global `agent_location` cache if needed. Movement
+    is blocked when the destination is out of bounds or contains a wall.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+        direction (str): The movement direction. Expected values are `"up"`,
+            `"down"`, `"left"`, or `"right"`.
+
+    Returns:
+        bool: True if the agent moved successfully, otherwise False.
     """
     global agent_location
-    
+
     if agent_location is None:
         agent_location = getAgentLocation(matrix)
 
@@ -219,12 +317,22 @@ def moveAgent(matrix, direction):
 
 
 def moveUntilEdgeOrWallWithoutFallingFromEdge(matrix, direction):
-    """
-    Move the agent in the given direction until it hits a wall or the edge of the world, without falling from the edge.
-    Direction can be 'up', 'down', 'left' or 'right'.
+    """Moves the agent repeatedly until blocked by a wall or boundary.
+
+    The agent continues moving in the requested direction until the next move
+    would leave the grid or enter a wall. The matrix and global
+    `agent_location` are updated in place.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+        direction (str): The movement direction. Expected values are `"up"`,
+            `"down"`, `"left"`, or `"right"`.
+
+    Returns:
+        None
     """
     global agent_location
-    
+
     while True:
         if agent_location is None:
             agent_location = getAgentLocation(matrix)
@@ -261,23 +369,47 @@ World will be represented as a 10x10 matrix, where:
 
 
 def setEmptyWorld():
-    """
-    Empty world will have no walls and no coins, but will have a shop planted in the world. Agent will have to navigate through the world to reach the shop while avoiding fall from the edge.
+    """Initializes an empty world with only a randomly placed shop.
+
+    This function uses the global `matrix` and does not reset existing state
+    before placing the shop.
+
+    Args:
+        None
+
+    Returns:
+        None
     """
     plantAShopInRandomLocation(matrix)
 
 
 def setOpenWorld():
-    """
-    Open world will have no walls sorrounding it, but will have some walls and coins planted inside the world. Agent will have to navigate through the world to collect coins while avoiding walls and fall from the edge.
+    """Configures the global world with random walls and coins.
+
+    The world remains open at the border, and no shop or agent is placed by
+    this function.
+
+    Args:
+        None
+
+    Returns:
+        None
     """
     plantRandomSophisticatedMazeWalls(matrix)
     plantCoinsInRandomLocation(matrix)
 
 
 def setBorderWorld():
-    """
-    Border world will have walls sorrounding it, but will have some walls and coins planted inside the world. Agent will have to navigate through the world to collect coins while avoiding walls and fall from the edge.
+    """Configures the global world with border walls, random walls, coins, and a shop.
+
+    This function mutates the global `matrix` by surrounding it with walls,
+    adding additional random walls and coins, and placing one shop.
+
+    Args:
+        None
+
+    Returns:
+        None
     """
     setBorder(matrix)
     plantRandomSophisticatedMazeWalls(matrix)
@@ -286,8 +418,13 @@ def setBorderWorld():
 
 
 def printWorld(matrix):
-    """
-    Print the world in a readable format.
+    """Prints the world grid in a readable row-by-row format.
+
+    Args:
+        matrix (list[list[str]]): A 10x10 world grid.
+
+    Returns:
+        None
     """
     for i in range(10):
         for j in range(10):
@@ -298,46 +435,46 @@ def printWorld(matrix):
 """
 Set up the world with different configurations of walls and coins.
 """
+
+
 def reset_world():
+    """Resets the global world state.
+
+    This function recreates the global `matrix` as an empty 10x10 grid and
+    clears the cached `agent_location`.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     global matrix, agent_location
     matrix = [["." for _ in range(10)] for _ in range(10)]
     agent_location = None
 
+
 def initialise_world():
+    """Initializes the world and caches the agent's location.
+
+    This function populates the global world using `setOpenWorld()`, places the
+    agent in a random empty cell, and stores the agent's location in the global
+    `agent_location` variable.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     global agent_location
     # reset_world()
     setOpenWorld()
     plantAgentInRandomLocation(matrix)
     agent_location = getAgentLocation(matrix)
 
+def main():
+    initialise_world()
 
-TOOLS_REGISTRY = {
-    "getAgentLocation": lambda: getAgentLocation(matrix),
-    "moveAgent": lambda direction: moveAgent(matrix, direction),
-    "moveUntilEdgeOrWallWithoutFallingFromEdge": lambda direction: moveUntilEdgeOrWallWithoutFallingFromEdge(
-        matrix, direction
-    ),
-}
-
-
-# setOpenWorld()
-
-
-# print("Agent position: ", getAgentLocation(matrix))
-# print("Coins positions: ", getCoinsLocations(matrix))
-# print("Shop position: ", getShopLocation(matrix))
-# print("World:")
-# printWorld(matrix)
-
-# for _ in range(5):
-#     moveUntilEdgeOrWallWithoutFallingFromEdge(matrix, "up")
-
-# for _ in range(5):
-#     moveUntilEdgeOrWallWithoutFallingFromEdge(matrix, "down")
-
-# for _ in range(2):
-#     moveUntilEdgeOrWallWithoutFallingFromEdge(matrix, "left")
-
-# print("Agent position after moving up: ", getAgentLocation(matrix))
-# print("World after moving up:")
-# printWorld(matrix)
+if __name__ == "__main__":
+    main()
